@@ -1,0 +1,61 @@
+<div class="flex flex-col items-center justify-center min-h-screen bg-gray-100" id="recaptcha-container">
+  <div class="bg-white p-8 rounded-lg shadow-md w-80" >
+    <h2 class="text-2xl font-bold mb-4 text-center">Phone Login</h2>
+    <form [formGroup]="phoneNumberForm" (ngSubmit)="submitPhoneNumber()">
+      <div *ngIf="!verificationId">
+        <div class="mb-4">
+          <label for="phoneNumber" class="block text-gray-700 text-sm font-bold mb-2">Phone Number</label>
+          <ngx-intl-tel-input
+            [preferredCountries]="['us', 'gb']"  <!-- Add your preferred countries -->
+            [enableAutoCountrySelect]="true"
+            [searchCountryFlag]="true"
+            [searchCountryField]="['iso2', 'name']"
+            [selectFirstCountry]="false"
+            [maxLength]="15"
+            [phoneValidation]="true"
+            [separateDialCode]="true"
+            formControlName="phone"
+            (countryChange)="onCountryChange($event)">
+          </ngx-intl-tel-input>
+          <div
+            *ngIf="phoneNumberForm.get('phone')?.invalid && (phoneNumberForm.get('phone')?.dirty || phoneNumberForm.get('phone')?.touched)"
+            class="text-red-500 text-sm">
+
+          </div>
+
+          <div *ngIf="phoneNumberForm.get('phone')?.invalid && (phoneNumberForm.get('phone')?.dirty || phoneNumberForm.get('phone')?.touched)" class="text-red-500 text-sm ">
+            <div *ngIf="phoneNumberForm.get('phone')?.errors?.required">Phone number is required.</div>
+            <div *ngIf="phoneNumberForm.get('phone')?.errors?.invalidPhoneNumber">Invalid phone number.</div>
+          </div>
+        </div>
+        <button type="submit" [disabled]="phoneNumberForm.invalid || loading"
+          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:opacity-50">
+          <span *ngIf="loading">Sending...</span>
+          <span *ngIf="!loading">Send Code</span>
+        </button>
+        <div *ngIf="errorMessage" class="text-red-500 text-sm mt-2">
+          {{ errorMessage }}
+        </div>
+
+        
+      </div>
+    </form>
+    <div *ngIf="verificationId">
+      <div class="mb-4">
+        <label for="verificationCode" class="block text-gray-700 text-sm font-bold mb-2">Verification Code</label>
+        <input type="text" id="verificationCode" [(ngModel)]="verificationCode" placeholder="Enter verification code"
+          class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          required>
+      </div>
+
+      <button (click)="verifyCode()" [disabled]="loading"
+        class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:opacity-50">
+        <span *ngIf="loading">Verifying...</span>
+        <span *ngIf="!loading">Verify Code</span>
+      </button>
+    </div>
+
+    <div *ngIf="message" class="mt-4">
+      <p [ngClass]="{'text-green-500': success, 'text-red-500': !success}" class="text-sm">{{ message }}</p>
+    </div>
+  </div></div>
