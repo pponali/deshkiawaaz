@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, provideZoneChangeDetection, ErrorHandler } from '@angular/core';
 import { initializeApp, provideFirebaseApp, getApp } from '@angular/fire/app';
 import {
   ReCaptchaEnterpriseProvider,
@@ -23,7 +23,8 @@ import {
 } from '@angular/fire/app-check';
 import { getAuth, provideAuth } from '@angular/fire/auth';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, provideFirestore } from '@angular/fire/firestore';
-import { environment } from '../environments/environments';
+import { environment } from '../environments/environment';
+import { ErrorService } from './services/error.service';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 
 declare global {
@@ -32,6 +33,7 @@ declare global {
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    { provide: ErrorHandler, useClass: ErrorService },
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideFirebaseApp(() =>
       initializeApp(environment.firebase), 
