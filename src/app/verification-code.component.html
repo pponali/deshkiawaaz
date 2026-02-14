@@ -1,16 +1,17 @@
 <div class="max-w-md mx-auto mt-10 p-5 bg-white rounded-lg shadow-md">
   <h2 class="text-2xl font-semibold text-gray-800 mb-5">Verify Phone Number</h2>
-  <div *ngIf="loading" class="text-blue-500">Sending verification code...</div>
+  <div *ngIf="loading" class="text-blue-500">Verifying code...</div>
   <div *ngIf="successMessage" class="text-green-500">{{ successMessage }}</div>
   <div *ngIf="errorMessage" class="text-red-500">{{ errorMessage }}</div>
   <div class="mb-4">
-    <label for="verificationCode" class="block text-gray-700 text-sm font-bold mb-2">Verification Code:</label>    
-    <input type="number" id="verificationCode" [(ngModel)]="otpControl" placeholder="Enter 6-digit code"
-    (ngModelChange)="onOtpChange($event)"
-           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>   
-    <div *ngIf="errorMessage" class="text-red-500 mt-2">
-      {{ errorMessage }}
-    </div>
+    <label for="verificationCode" class="block text-gray-700 text-sm font-bold mb-2">Verification Code:</label>
+    <input type="text" 
+           id="verificationCode" 
+           [formControl]="otpControl"
+           (input)="onOtpChange()"
+           placeholder="Enter 6-digit code"
+           maxlength="6"
+           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+           required>
   </div>
-  
 </div>

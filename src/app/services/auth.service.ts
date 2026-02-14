@@ -11,23 +11,28 @@ import { DataService } from './data.service';
   providedIn: 'root',
 })
 export class AuthService {
-  constructor(private afAuth: AngularFireAuth, private dataService: DataService) {
+  constructor(private afAuth: AngularFireAuth, private dataService: DataService) {}
+
+  getCurrentUser(): Observable<User | null> {
+    return this.afAuth.authState.pipe(
+      switchMap((firebaseUser) => {
+        if (firebaseUser) {
+          return this.dataService.getUser(firebaseUser.uid).pipe(
+            map((user) => user || null)
+          );
+        }
+        return of(null);
+      })
+    );
   }
 
-  sendVerificationCode(phoneNumber: string): Observable<void> {
+  sendVerificationCode(phoneNumber: string): Observable<firebase.auth.ConfirmationResult> {
     const appVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-      'size': 'invisible',
+      size: 'invisible',
     });
 
-    return of(null).pipe(
-      switchMap(() => this.afAuth.signInWithPhoneNumber(phoneNumber, appVerifier)),
-      map((confirmationResult) => {
-        // You might want to store the confirmationResult for later use
-        // For example, in a component's state
-        console.log('Verification code sent successfully.');
-        return;
-      }),
-      catchError((error) => {
+    return from(this.afAuth.signInWithPhoneNumber(phoneNumber, appVerifier)).pipe(
+      catchError((error: { code?: string }) => {
         console.error('Error sending verification code:', error);
         let errorMessage = 'Failed to send verification code.';
         if (error.code === 'auth/invalid-phone-number') {
@@ -40,15 +45,14 @@ export class AuthService {
     );
   }
 
-
-  confirmVerificationCode(code: string, confirmationResult: any, phoneNumber: string): Observable<User> {
+  confirmVerificationCode(code: string, confirmationResult: firebase.auth.ConfirmationResult, phoneNumber: string): Observable<User> {
     return from(confirmationResult.confirm(code)).pipe(
-      switchMap((userCredential) => {
+      switchMap((userCredential: firebase.auth.UserCredential) => {
         const userUid = userCredential.user?.uid;
         if (!userUid) {
           return throwError(() => new Error('User UID not found after authentication.'));
         }
-        return this.dataService.getUser(phoneNumber).pipe(
+        return this.dataService.getUser(userUid).pipe(
           switchMap((existingUser) => {
             if (existingUser) {
               return of(existingUser);
@@ -61,11 +65,11 @@ export class AuthService {
             }
           })
         );
-      }), catchError((error) => {
+      }),
+      catchError((error: Error) => {
         console.error('Error confirming verification code:', error);
         return throwError(() => new Error('Invalid verification code.'));
       })
     );
   }
-
 }

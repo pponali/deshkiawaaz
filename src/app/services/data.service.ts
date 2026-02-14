@@ -1,17 +1,11 @@
 import { Injectable } from '@angular/core';
-import {
-  AngularFirestore,
-  AngularFirestoreCollection,
-  DocumentReference,
-  QueryFn,
-} from '@angular/fire/firestore';
-import { AngularFireAuth } from '@angular/fire/auth';
-import { Observable, of, throwError } from 'rxjs';
-import { catchError, map, switchMap } from 'rxjs/operators';
+import { AngularFirestore, AngularFirestoreCollection, DocumentReference, QueryFn } from '@angular/fire/compat/firestore';
+import { AngularFireAuth } from '@angular/fire/compat/auth';
+import { Observable, of, from } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import { User } from '../models/user.model';
 import { Post } from '../models/post.model';
 import { Leaderboard, LeaderboardEntry } from '../models/leaderboard.model';
-import { from } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -33,39 +27,46 @@ export class DataService {
       .doc<User>(uid)
       .valueChanges()
       .pipe(
-        catchError((error) => {
+        catchError((error: Error) => {
           console.error('Error getting user:', error);
           return of(undefined);
         })
       );
   }
 
-  createUser(user: User): Promise<void> {
-    return this.usersCollection
-      .doc<User>(user.uid)
-      .set(user)
-      .catch((error) => {
-        console.error('Error creating user:', error);
-        throw error;
-      });
+  createUser(user: User): Observable<User> {
+    return from(
+      this.usersCollection
+        .doc<User>(user.uid)
+        .set(user)
+        .then(() => user)
+        .catch((error: Error) => {
+          console.error('Error creating user:', error);
+          throw error;
+        })
+    );
   }
 
-  updateUser(user: User): Promise<void> {
-    return this.usersCollection
-      .doc<User>(user.uid)
-      .update(user)
-      .catch((error) => {
-        console.error('Error updating user:', error);
-        throw error;
-      });
+  updateUser(user: Partial<User> & { uid: string }): Observable<void> {
+    return from(
+      this.usersCollection
+        .doc<User>(user.uid)
+        .update(user)
+        .catch((error: Error) => {
+          console.error('Error updating user:', error);
+          throw error;
+        })
+    );
   }
 
   // Post operations
-  createPost(post: Post): Promise<DocumentReference<Post>> {
-    return this.postsCollection.add(post).catch((error) => {
-      console.error('Error creating post:', error);
-      throw error;
-    });
+  createPost(post: Post): Observable<DocumentReference<Post>> {
+    return from(
+      this.postsCollection.add(post).catch((error: Error) => {
+        console.error('Error creating post:', error);
+        throw error;
+      })
+    );
   }
 
   getPostsByRegion(regionId: string): Observable<Post[]> {
@@ -74,21 +75,23 @@ export class DataService {
       .collection<Post>('posts', queryFn)
       .valueChanges({ idField: 'id' })
       .pipe(
-        catchError((error) => {
+        catchError((error: Error) => {
           console.error('Error getting posts by region:', error);
           return of([]);
         })
       );
   }
 
-  updatePostVotes(postId: string, upvotes: number, downvotes: number): Promise<void> {
-    return this.postsCollection
-      .doc<Post>(postId)
-      .update({ upvotes, downvotes })
-      .catch((error) => {
-        console.error('Error updating post votes:', error);
-        throw error;
-      });
+  updatePostVotes(postId: string, upvotes: number, downvotes: number): Observable<void> {
+    return from(
+      this.postsCollection
+        .doc<Post>(postId)
+        .update({ upvotes, downvotes })
+        .catch((error: Error) => {
+          console.error('Error updating post votes:', error);
+          throw error;
+        })
+    );
   }
 
   // Leaderboard operations
@@ -97,40 +100,41 @@ export class DataService {
       map((posts) => {
         const leaderboardEntries: LeaderboardEntry[] = posts.map((post) => {
           const score = post.upvotes - post.downvotes;
-          return { postId: post.id, score };
+          return { postId: post.id, score, post };  // Include post data
         });
 
         // Sort by score in descending order
         leaderboardEntries.sort((a, b) => b.score - a.score);
         return leaderboardEntries;
       }),
-      catchError((error) => {
+      catchError((error: Error) => {
         console.error('Error calculating leaderboard:', error);
         return of([]);
       })
     );
   }
 
-  updateLeaderboard(regionId: string, entries: LeaderboardEntry[]): Promise<void> {
-    return this.leaderboardsCollection
-      .doc<Leaderboard>(regionId)
-      .set({ regionId, entries }) // Assuming entries is the complete array
-      .catch((error) => {
-        console.error('Error updating leaderboard:', error);
-        throw error;
-      });
+  updateLeaderboard(regionId: string, entries: LeaderboardEntry[]): Observable<void> {
+    return from(
+      this.leaderboardsCollection
+        .doc<Leaderboard>(regionId)
+        .set({ regionId, entries })
+        .catch((error: Error) => {
+          console.error('Error updating leaderboard:', error);
+          throw error;
+        })
+    );
   }
+
   getLeaderboard(regionId: string): Observable<Leaderboard | undefined> {
     return this.leaderboardsCollection
       .doc<Leaderboard>(regionId)
       .valueChanges()
       .pipe(
-        catchError((error) => {
+        catchError((error: Error) => {
           console.error('Error getting leaderboard:', error);
           return of(undefined);
         })
       );
   }
-
-
 }
