@@ -15,13 +15,12 @@ export class VerificationCodeComponent {
   loading = false;
   errorMessage = '';
   successMessage = '';
-  verificationCode = '';
 
-  @Output() onCodeVerified = new EventEmitter<any>();
+  @Output() onCodeVerified = new EventEmitter<void>();
 
   constructor(private authService: AuthService) {}
 
-  verifyCode(confirmationResult: any, phoneNumber: string): void {
+  verifyCode(): void {
     const code = this.otpControl.value;
     if (!code) {
       this.errorMessage = 'Code is required.';
@@ -34,16 +33,16 @@ export class VerificationCodeComponent {
     this.errorMessage = '';
     this.loading = true;
 
-    this.authService.confirmVerificationCode(code, confirmationResult, phoneNumber).subscribe({
+    this.authService.confirmVerificationCode(code).subscribe({
       next: () => {
         this.errorMessage = '';
         this.successMessage = 'Verification successful!';
         this.loading = false;
-        this.onCodeVerified.emit(confirmationResult);
+        this.onCodeVerified.emit();
       },
-      error: () => {
+      error: (error: Error) => {
         this.loading = false;
-        this.errorMessage = 'Verification failed. Please check the code and try again.';
+        this.errorMessage = error.message || 'Verification failed. Please check the code and try again.';
       }
     });
   }
@@ -51,7 +50,7 @@ export class VerificationCodeComponent {
   onOtpChange(): void {
     // Auto-verify when 6 digits entered
     if (this.otpControl.value?.length === 6) {
-      // Could implement auto-verification here
+      this.verifyCode();
     }
   }
 }

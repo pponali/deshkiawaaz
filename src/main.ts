@@ -18,15 +18,5 @@ import { bootstrapApplication } from '@angular/platform-browser';
 import { appConfig } from './app/app.config';
 import { AppComponent } from './app/app.component';
 
-console.log('Starting Angular bootstrap...');
 bootstrapApplication(AppComponent, appConfig)
-  .then(() => console.log('Angular bootstrapped successfully'))
-  .catch((err) => {
-    console.error('Bootstrap error:', err);
-    // Show error on page for debugging
-    document.body.innerHTML = `<div style="color:red;padding:20px;font-family:monospace;">
-      <h1>App Failed to Load</h1>
-      <pre>${err?.message || err}</pre>
-      <pre>${err?.stack || ''}</pre>
-    </div>`;
-  });
+  .catch((err) => console.error('Bootstrap error:', err));
