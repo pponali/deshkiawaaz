@@ -37,6 +37,9 @@ jobs:
           FIREBASE_MEASUREMENT_ID: ${{ secrets.FIREBASE_MEASUREMENT_ID }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
+          # Create base environment.ts from template for dev imports
+          cp src/environments/environment.local.ts src/environments/environment.ts
+          # Create and inject prod environment
           chmod +x scripts/set-env.sh
           ./scripts/set-env.sh
 
