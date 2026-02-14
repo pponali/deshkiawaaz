@@ -1,4 +1,28 @@
-# "Planning with the Gemini API" - a Firebase AI sample app
+# Deshkiawaaz - Civic Engagement Platform
+
+This monorepo contains two integrated projects that together form a comprehensive civic engagement platform:
+
+1. **Deshkiawaaz** (Angular + Firebase) - AI-powered task management and community engagement
+2. **Prajaavaani** (iOS + Spring Boot) - Civic concerns posting with geographic leaderboards
+
+---
+
+## Project Structure
+
+```
+deshkiawaaz/
+├── src/                        # Angular frontend (Deshkiawaaz)
+├── prajaavaani-backend/        # Java Spring Boot backend (Prajaavaani)
+├── prajaavaani-ios/            # iOS SwiftUI frontend (Prajaavaani)
+├── main.tf                     # Terraform infrastructure
+├── firebase.json               # Firebase configuration
+├── package.json                # Angular dependencies
+└── README.md
+```
+
+---
+
+# Part 1: Deshkiawaaz - "Planning with the Gemini API" - a Firebase AI sample app
 
 Welcome to the _Planning with the Gemini API_ sample app, an AI-powered web app
 for to-do lists! It's an [Angular](https://angular.io/) app built using the
@@ -228,3 +252,219 @@ are blocking requests from your app. Here's how to resolve it:
 - [Google AI Gemini API documentation](https://ai.google.dev/gemini-api/docs/quickstart?lang=web)
   (for experimentation and prototyping)
 - [Vertex AI in Firebase documentation](https://firebase.google.com/docs/vertex-ai) (for production apps)
+
+---
+
+# Part 2: Prajaavaani - Indian Audience Concerns & Leaderboard App
+
+## Overview
+
+Prajaavaani is a civic engagement platform designed for the Indian audience that enables users to create and share concerns, interact through voting (upvotes/downvotes), and view dynamic leaderboard rankings segmented by various geographic levels.
+
+The project consists of:
+- **iOS Frontend** (`prajaavaani-ios/`) - SwiftUI app with MVVM architecture
+- **Spring Boot Backend** (`prajaavaani-backend/`) - REST API with PostgreSQL
+
+## Key Features
+
+### 1. User Authentication
+- OTP-based mobile number verification via Twilio SMS
+- JWT token-based session management
+- Mobile number as primary unique identifier (Indian 10-digit format)
+- Spring Security with stateless session management
+
+### 2. Concerns Posting
+- Text-based concern creation (up to 5,000 characters)
+- Optional author name field
+- Geographic level selection (8 levels)
+- Location identifier specification
+- Anonymous posting support
+
+### 3. Voting Mechanism
+- Upvote/Downvote functionality per concern
+- Prevents duplicate votes (unique constraint per user per concern)
+- Vote toggle capability (click same vote to remove)
+- Vote type switching (change upvote to downvote and vice versa)
+- Atomic vote operations with `@Transactional`
+
+### 4. Geographic Leaderboards
+Leaderboards are available at 8 geographic levels:
+- Region, Village, Town, City, Pincode, District, State, Country
+- Pagination support (20 items per page default)
+- Sorted by net votes (upvotes - downvotes) descending
+
+## Technology Stack
+
+### iOS Frontend
+| Technology | Purpose |
+|---|---|
+| Swift / SwiftUI | UI framework (declarative) |
+| MVVM Architecture | Model-View-ViewModel pattern |
+| Combine | Reactive programming / async operations |
+
+### Backend
+| Technology | Version | Purpose |
+|---|---|---|
+| Java | 17 | Language |
+| Spring Boot | 3.2.0 | Application framework |
+| Spring Data JPA | - | ORM / Data access |
+| Spring Security | - | Authentication & authorization |
+| PostgreSQL | - | Primary database |
+| H2 Database | - | Testing database |
+| Twilio SDK | 10.7.2 | SMS/OTP delivery |
+| JWT (jjwt) | 0.11.5 | Token generation/validation |
+| SpringDoc OpenAPI | 2.3.0 | API documentation (Swagger UI) |
+| Lombok | 1.18.30 | Code generation |
+| Micrometer + Prometheus | - | Metrics & monitoring |
+
+## API Endpoints
+
+### Authentication
+```
+POST /api/v1/auth/request-otp
+  Body: { "mobileNumber": "9876543210" }
+  Response: 202 Accepted
+
+POST /api/v1/auth/verify-otp
+  Body: { "mobileNumber": "9876543210", "otpCode": "123456" }
+  Response: 200 OK { "userId", "jwtToken", "mobileNumber" (masked) }
+```
+
+### Concerns
+```
+POST /api/v1/concerns
+  Header: Authorization: Bearer <jwt_token>
+  Body: { "text", "geographicLevel", "locationIdentifier", "authorName" (optional) }
+  Response: 201 Created
+
+GET /api/v1/concerns/leaderboard?level=CITY&locationIdentifier=Delhi&page=0&size=20
+  Response: 200 OK (Paginated concerns sorted by net votes)
+
+POST /api/v1/concerns/vote
+  Header: Authorization: Bearer <jwt_token>
+  Body: { "concernId": "uuid", "voteType": "UPVOTE" }
+  Response: 200 OK (Updated concern)
+```
+
+## Backend Architecture
+
+```
+Controller Layer (REST Endpoints)
+    ↓
+Service Layer (Business Logic)
+    ↓
+Repository Layer (Spring Data JPA)
+    ↓
+Database (PostgreSQL / H2)
+```
+
+### Key Files
+```
+prajaavaani-backend/
+├── pom.xml                          # Maven dependencies
+├── src/main/
+│   ├── java/com/prajaavaani/backend/
+│   │   ├── PrajaavaaniBackendApplication.java
+│   │   ├── config/
+│   │   │   ├── SecurityConfig.java          # Spring Security setup
+│   │   │   ├── JwtAuthenticationFilter.java # JWT filter
+│   │   │   ├── TwilioConfig.java            # Twilio SMS config
+│   │   │   └── OpenApiConfig.java           # Swagger/OpenAPI
+│   │   ├── controller/
+│   │   │   ├── AuthController.java          # Auth endpoints
+│   │   │   └── ConcernController.java       # Concern CRUD + voting
+│   │   ├── dto/                             # Request/Response objects
+│   │   ├── exception/                       # Custom exceptions
+│   │   ├── model/                           # JPA entities
+│   │   ├── repository/                      # Data access layer
+│   │   └── service/                         # Business logic
+│   └── resources/
+│       └── application.yml
+```
+
+### iOS Frontend Files
+```
+prajaavaani-ios/
+├── prajaavaaniApp.swift              # App entry point
+├── Models/
+│   ├── Concern.swift                 # Concern data model
+│   ├── User.swift                    # User model
+│   └── Vote.swift                    # Vote model + enums
+├── ViewModels/
+│   ├── AuthenticationViewModel.swift # Auth state management
+│   ├── LeaderboardViewModel.swift    # Leaderboard data + voting
+│   └── PostConcernViewModel.swift    # Concern creation logic
+└── Views/
+    ├── ContentView.swift             # Tab navigation
+    ├── AuthenticationView.swift      # Login/OTP screens
+    ├── LeaderboardView.swift         # Leaderboard display
+    └── PostConcernView.swift         # Concern creation form
+```
+
+## Running the Prajaavaani Backend
+
+### Prerequisites
+- Java 17+
+- Maven 3.6+
+- PostgreSQL (or H2 for testing)
+- Twilio account (optional, for SMS)
+
+### Configuration
+Add the following to `prajaavaani-backend/src/main/resources/application.yml`:
+```yaml
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/prajaavaani
+    username: your_db_user
+    password: your_db_password
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+jwt:
+  secret:
+    key: your_base64_encoded_secret_key
+  expiration:
+    ms: 86400000
+
+twilio:
+  accountSid: your_twilio_account_sid
+  authToken: your_twilio_auth_token
+  phoneNumber: your_twilio_phone_number
+```
+
+### Build & Run
+```bash
+cd prajaavaani-backend
+mvn clean compile
+mvn spring-boot:run
+```
+
+API documentation available at: `http://localhost:8080/swagger-ui.html`
+
+## Running the Prajaavaani iOS App
+
+### Prerequisites
+- Xcode 13+
+- iOS 14+ target device/simulator
+
+Open the `prajaavaani-ios/` directory in Xcode and build/run the project.
+
+## Future Enhancements (Prajaavaani)
+
+- Commenting and discussion features
+- Multimedia support (images/videos)
+- Analytics dashboard
+- Push notifications
+- Social media integration
+
+---
+
+## Shared Concepts Between Deshkiawaaz & Prajaavaani
+
+Both projects share similar civic engagement patterns:
+- **Community Posts/Concerns** with text content
+- **Voting System** (upvote/downvote)
+- **Geographic Leaderboards** (region, city, state, country levels)
+- **Phone-based Authentication** (Firebase Auth vs OTP+JWT)
+- **Regional Segmentation** for content filtering
