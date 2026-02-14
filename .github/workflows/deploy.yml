@@ -57,6 +57,7 @@ jobs:
 
       - name: Deploy Firestore Rules
         uses: w9jds/firebase-action@master
+        continue-on-error: true  # Rules deploy may fail if permissions not propagated
         with:
           args: deploy --only firestore:rules
         env:
