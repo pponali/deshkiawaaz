@@ -121,11 +121,20 @@ export class AppComponent {
     public dataService: DataService,
     public authService: AuthService,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) {
+    console.log('AppComponent constructor called');
+  }
 
   ngOnInit(): void {
-    this.loadTasks().subscribe();
-    this.onGoClick();
+    console.log('AppComponent ngOnInit called, authState:', this.authState);
+    try {
+      this.loadTasks().subscribe({
+        error: (err) => console.error('loadTasks error:', err)
+      });
+      this.onGoClick();
+    } catch (e) {
+      console.error('ngOnInit error:', e);
+    }
   }
 
   async ngAfterViewInit(): Promise<void> {
