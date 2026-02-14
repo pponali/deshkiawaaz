@@ -1,17 +1,5 @@
 /**
  * Copyright 2024 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
  */
 
 import { ApplicationConfig, provideZoneChangeDetection, ErrorHandler, importProvidersFrom } from '@angular/core';
@@ -19,21 +7,39 @@ import { environment } from '../environments/environment';
 import { ErrorService } from './services/error.service';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 
-// Firebase compat imports (required for AngularFireAuth and AngularFirestore)
+// Firebase compat imports (for AngularFireAuth and AngularFirestore in auth.service and data.service)
 import { AngularFireModule } from '@angular/fire/compat';
 import { AngularFireAuthModule } from '@angular/fire/compat/auth';
 import { AngularFirestoreModule } from '@angular/fire/compat/firestore';
+
+// Firebase modular imports (for task.service which uses modular API)
+import { provideFirebaseApp, initializeApp, getApp } from '@angular/fire/app';
+import { provideAuth, getAuth } from '@angular/fire/auth';
+import { provideFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from '@angular/fire/firestore';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     { provide: ErrorHandler, useClass: ErrorService },
     provideZoneChangeDetection({ eventCoalescing: true }),
-    // Use compat modules for AngularFireAuth and AngularFirestore
+    
+    // Compat modules (for auth.service.ts and data.service.ts)
     importProvidersFrom(
       AngularFireModule.initializeApp(environment.firebase),
       AngularFireAuthModule,
       AngularFirestoreModule
     ),
+    
+    // Modular providers (for task.service.ts)
+    provideFirebaseApp(() => initializeApp(environment.firebase)),
+    provideAuth(() => getAuth()),
+    provideFirestore(() => 
+      initializeFirestore(getApp(), {
+        localCache: persistentLocalCache({
+          tabManager: persistentMultipleTabManager(),
+        }),
+      })
+    ),
+    
     provideAnimationsAsync(),
   ],
 };
