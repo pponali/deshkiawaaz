@@ -54,3 +54,16 @@ src/environments/environment.prod.ts
 !src/environments/environments.ts.tmpl
 
 .terraform/
+
+# Android
+android/app/google-services.json
+android/keystore.properties
+android/*.keystore
+android/*.jks
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+
+# Capacitor
+capacitor.config.local.ts

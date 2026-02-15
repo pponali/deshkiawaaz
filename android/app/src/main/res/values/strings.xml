@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">DeshKiAwaaz</string>
+    <string name="title_activity_main">DeshKiAwaaz</string>
+    <string name="package_name">com.deshkiawaaz.app</string>
+    <string name="custom_url_scheme">com.deshkiawaaz.app</string>
+</resources>

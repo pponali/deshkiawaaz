@@ -47,6 +47,7 @@ import { Post } from './models/post.model';
 import { AuthService } from './services/auth.service';
 import { User } from './models/user.model';
 import { LeaderboardEntry } from './models/leaderboard.model';
+import { CapacitorService } from './services/capacitor.service';
 
 const HELP_ME_CLEAN = 'You are an organization expert transforming this place to be enjoyed by a child and a toddler who love superheroes';
 const HELP_ME_PLAN = 'You are a travel expert planning a trip here for 5 people including one toddler and my mom who is turning 50.';
@@ -120,13 +121,18 @@ export class AppComponent {
     public taskService: TaskService,
     public dataService: DataService,
     public authService: AuthService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private capacitorService: CapacitorService
   ) {
     console.log('AppComponent constructor called');
   }
 
   ngOnInit(): void {
     console.log('AppComponent ngOnInit called, authState:', this.authState);
+    
+    // Initialize Capacitor for native platforms
+    this.capacitorService.initialize();
+    
     try {
       this.loadTasks().subscribe({
         error: (err) => console.error('loadTasks error:', err)
