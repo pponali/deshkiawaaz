@@ -49,6 +49,7 @@ Thumbs.db
 # Environment files with secrets (keep templates)
 src/environments/environment.ts
 src/environments/environment.prod.ts
+src/environments/environments.ts
 !src/environments/environment.local.ts
 !src/environments/environment.prod.ts.template
 !src/environments/environments.ts.tmpl

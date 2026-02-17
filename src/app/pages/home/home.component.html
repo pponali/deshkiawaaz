@@ -1,0 +1,262 @@
+<div class="site-layout h-screen overflow-scroll">
+  <div class="w-full py-4 flex flex-col lg:px-12 mb-8">
+    <h2 class="text-2xl font-bold mb-4">Community Posts</h2>
+    <!-- New Post Form -->
+    <h3 class="text-lg font-semibold mb-2">Create a New Post</h3>
+    <div class="p-4 mb-4 bg-gray-100 rounded-lg">
+      <form (ngSubmit)="onSubmitPost()" class="flex flex-col gap-4">
+        <textarea
+          [(ngModel)]="newPostContent"
+          name="newPostContent"
+          placeholder="What's on your mind?"
+          class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          rows="3"
+          maxlength="5000"
+        ></textarea>
+        <button
+          type="submit"
+          class="w-24 px-4 py-2 text-white bg-blue-500 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          Post
+        </button>
+        @if (postCreationMessage) {
+          <p class="text-sm" [ngClass]="{'text-green-500': postCreationSuccess, 'text-red-500': !postCreationSuccess}">{{ postCreationMessage }}</p>
+        }
+      </form>
+    </div>
+    <!-- Region Selection Input -->
+    <h3 class="text-lg font-semibold mb-2">Select Your Region</h3>
+    <div class="flex items-center mb-4">
+      <label for="regionInput" class="mr-2 text-gray-700">Your Region</label>
+      <input
+        type="text"
+        id="regionInput"
+        [(ngModel)]="userRegion"
+        placeholder="Enter your region (e.g., country:India/state:Karnataka/city:Bangalore)"
+        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+      <button (click)="callUpdateRegion()" class="ml-2 px-4 py-2 text-white bg-blue-500 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          Update Region
+      </button>
+    </div>
+
+    <div class="bg-white p-4 rounded-lg shadow-md">
+      <!-- Icon and Title Section -->
+      <div class="flex items-center p-8 pl-[10%] justify-start">
+        <img
+          src="assets/Spark_Gradient.png"
+          alt="DeshKiAwaaz Icon"
+          class="w-12 h-12 mr-4"
+        />
+        <h1 class="text-3xl" style="font-family: 'Helvetica Neue', sans-serif">
+          Planning with the Gemini API
+        </h1>
+      </div>
+
+      <div
+        class="w-full p-4 flex flex-col lg:items-start lg:flex-row lg:gap-6 justify-between items-center mx-auto"
+      >
+        <!-- Task Generation -->
+        <div
+          class="w-full lg:w-2/5 p-4 bg-[#fff] transition-all duration-300 ease-in-out rounded-[40px] relative m-2 flex flex-col"
+        >
+          <div class="flex-grow flex flex-col justify-between overflow-scroll">
+            <div>
+              <!-- Checkbox Images Section -->
+              <div class="w-[90%] flex gap-12 justify-center mx-auto">
+                <app-checkboximage
+                  #location
+                  [src]="'/assets/location.png'"
+                  [checked]="formControls.locationSelected.value === true"
+                  (onCheckedChanged)="onSelectLocation($event)"
+                ></app-checkboximage>
+                <app-checkboximage
+                  #room
+                  [src]="'/assets/room.png'"
+                  [checked]="formControls.locationSelected.value === false"
+                  (onCheckedChanged)="onSelectRoom($event)"
+                ></app-checkboximage>
+              </div>
+
+              <!-- Prompt Input Section -->
+              <form>
+                <div class="w-full flex flex-col justify-between gap-4 mb-4 p-4 lg:flex-row xl:flex-row">
+                  <mat-form-field class="w-11/12 mb-8" appearance="outline">
+                    <mat-label>Add a prompt</mat-label>
+                    <textarea
+                      [formControl]="formControls.prompt"
+                      matInput
+                      [placeholder]="getCurrentPromptPlaceHolder()"
+                      rows="3"
+                    ></textarea>
+                    <mat-hint>
+                      <span class="font-light block"
+                        >Update the prompt to generate a new list, like:</span
+                      >
+                      @if (this.formControls.locationSelected.value) {
+                      <span class="block"
+                        >Help me plan a trip to this location</span
+                      >
+                      } @else {
+                      <span class="block"
+                        >Provide a list of tasks to clean this room</span
+                      >
+                      }
+                    </mat-hint>
+                  </mat-form-field>
+                  <button
+                  mat-button
+                  class="mt-6 flex items-center gap-2 pr-4"
+                  (click)="onGoClick()"
+                  [disabled]="!formControls.prompt.value"
+                >
+                  <span class="flex items-center">
+                    <img
+                      src="assets/spark_icon_24.svg"
+                      alt="Gemini Icon"
+                      class="w-6 h-6"
+                    />
+                    <span class="p-2">Go</span>
+                  </span>
+                </button>
+
+
+                </div>
+              </form>
+            </div>
+
+            <!-- Generated Task Section -->
+            <div class="flex-grow pb-4">
+              @if (isLoading()) {
+              <mat-spinner></mat-spinner>
+              } @else if (generatedTask) {
+              <app-task
+                [task]="generatedTask"
+                [canDelete]="false"
+                [showGeneratedWithGemini]="true"
+              ></app-task>
+              }
+            </div>
+          </div>
+
+          <!-- Buttons Section -->
+          <div class="w-full p-2">
+            <div class="flex flex-row gap-4 w-full justify-end">
+              <button
+                mat-button
+                [disabled]="!generatedTask"
+                class="w-36 text-md"
+                (click)="onSave()"
+              >
+                Save
+              </button>
+              <button
+                mat-stroked-button
+                class="w-36 text-md"
+                (click)="onResetClick()"
+                [disabled]="
+                  generatedTask === undefined &&
+                  getCurrentPromptPlaceHolder() === formControls.prompt.value
+                "
+              >
+                Reset
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Task Grid -->
+        @if (this.tasks.length > 0) {
+        <div
+          class="w-full lg:w-3/5 p-4 bg-[#fff] transition-all duration-300 ease-in-out rounded-[40px] relative overflow-scroll my-2 flex flex-col"
+        >
+          <div
+            class="flex-grow w-full grid grid-cols-1 lg:grid-cols-1 xl:grid-cols-2 gap-6 bg-[#fff] rounded-[40px] p-4"
+          >
+            @for (task of this.tasks; track task.maintask.id) {
+            <app-task
+              [task]="task"
+              class="h-auto"
+              (onDelete)="deleteCurrentMainAndSubTasks($event)"
+              (onTasksCompletedToggle)="onTasksCompleted($event)"
+            ></app-task>
+            }
+          </div>
+
+          <div
+            class="w-full bg-[#fff] p-4 text-end text-sm font-extralight text-[#1e88e5] rounded-b-[40px]"
+          >
+            Generated by the Gemini API
+          </div>
+        </div>
+        }
+      </div>
+    </div>
+  </div>
+
+   <!-- Posts Section -->
+   @if (posts.length > 0) {
+
+    <div class="p-4 mt-4 bg-gray-100 rounded-lg">
+      <h2 class="mb-4 text-xl font-semibold">Posts from Your Region</h2>
+      <div class="grid grid-cols-1 gap-4">
+        @for (post of posts; track post.id) {
+        <div class="p-4 bg-white rounded-lg shadow-md">
+          <p class="mb-2 text-gray-800">{{ post.content }}</p>
+          <p class="text-sm text-gray-500">By: {{ getAuthorName(post.userId) }}</p>
+          <p class="text-sm text-gray-500">{{ formatTimestamp(post.createdAt) }}</p>
+          <div class="flex items-center mt-2">
+            <button (click)="upvotePost(post)" class="flex items-center text-green-500 hover:text-green-600 focus:outline-none">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
+              <span class="ml-1 text-sm">{{ post.upvotes }}</span>
+            </button>
+            <button (click)="downvotePost(post)" class="ml-4 flex items-center text-red-500 hover:text-red-600 focus:outline-none">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+              <span class="ml-1 text-sm">{{ post.downvotes }}</span>
+            </button>
+          </div>
+        </div>
+        }
+      </div>
+    </div>
+   }
+
+    <!-- Leaderboard Section -->
+    @if (leaderboardsByRegion) {
+      <h3 class="text-lg font-semibold mb-2">Regional Leaderboard</h3>
+      <div class="flex items-center mb-4">
+        @if (leaderboardsByRegion.size > 0) {
+          <select [(ngModel)]="selectedRegionLevel" class="p-2 border border-gray-300 rounded-md">
+            @for (regionLevel of leaderboardsByRegion.keys(); track regionLevel) {
+              <option [value]="regionLevel">{{ regionLevel }}</option>
+            }
+          </select>
+        }
+      </div>
+
+      <div class="p-4 mt-4 bg-gray-100 rounded-lg">
+
+        @if (!leaderboardsByRegion.get(selectedRegionLevel) || leaderboardsByRegion.get(selectedRegionLevel)!.length === 0) {
+          <p>No leaderboards available for the selected region.</p>
+        } @else {
+        <div class="grid grid-cols-1 gap-4">
+          @for (entry of leaderboardsByRegion.get(selectedRegionLevel)!; track entry.postId) {
+            @if (entry.post) {
+              <div class="p-4 bg-white rounded-lg shadow-md">
+                <p class="text-gray-800">{{ entry.post.content | slice:0:100 }}...</p>
+                <p class="mt-2 text-sm text-gray-500">{{ formatTimestamp(entry.post.createdAt) }}</p>
+                <p class="mt-2 text-sm font-medium text-blue-600 flex gap-4">
+                  Score: {{ entry.score }}
+                  <span>({{ entry.post.upvotes }} Upvotes / {{ entry.post.downvotes }} Downvotes)</span>
+                </p>
+              </div>
+
+            }
+          }
+        </div>
+      }
+
+      </div>
+    }
+
+</div>

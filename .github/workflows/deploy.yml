@@ -5,10 +5,14 @@ on:
     branches: ["master"]
   workflow_dispatch:
 
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build-and-deploy:
+  quality:
+    name: Quality Checks
     runs-on: ubuntu-latest
-    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -23,8 +27,16 @@ jobs:
         with:
           version: latest
 
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Inject environment variables
         env:
@@ -38,14 +50,34 @@ jobs:
           FIREBASE_MEASUREMENT_ID: ${{ secrets.FIREBASE_MEASUREMENT_ID }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          # Create base environment.ts from template for dev imports
           cp src/environments/environment.local.ts src/environments/environment.ts
-          # Create and inject prod environment
           chmod +x scripts/set-env.sh
           ./scripts/set-env.sh
 
       - name: Build for production
         run: pnpm build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/firebase-ai-angular/browser
+          retention-days: 1
+
+  deploy:
+    name: Deploy to Firebase
+    needs: quality
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/firebase-ai-angular/browser
 
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
@@ -57,7 +89,7 @@ jobs:
 
       - name: Deploy Firestore Rules
         uses: w9jds/firebase-action@master
-        continue-on-error: true  # Rules deploy may fail if permissions not propagated
+        continue-on-error: true
         with:
           args: deploy --only firestore:rules
         env:

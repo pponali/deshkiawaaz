@@ -1,5 +1,6 @@
-import { Injectable, ErrorHandler } from '@angular/core';
+import { Injectable, ErrorHandler, inject } from '@angular/core';
 import { environment } from '../../environments/environment';
+import { LoggerService } from './logger.service';
 
 export interface AppError {
   message: string;
@@ -13,6 +14,7 @@ export interface AppError {
   providedIn: 'root'
 })
 export class ErrorService implements ErrorHandler {
+  private logger = inject(LoggerService);
   private errors: AppError[] = [];
   private maxErrors = 100;
 
@@ -25,11 +27,10 @@ export class ErrorService implements ErrorHandler {
 
     this.logError(appError);
 
-    // In production, you might want to send errors to a logging service
     if (environment.production) {
       this.reportError(appError);
     } else {
-      console.error('Application Error:', error);
+      this.logger.error('Unhandled application error', error);
     }
   }
 
@@ -49,16 +50,17 @@ export class ErrorService implements ErrorHandler {
   }
 
   private reportError(error: AppError): void {
-    // TODO: Integrate with error reporting service (e.g., Sentry, Firebase Crashlytics)
-    // For now, just log to console in a structured way
-    console.error('[PRODUCTION ERROR]', JSON.stringify({
+    this.logger.error('Production error', error, {
       message: error.message,
       timestamp: error.timestamp.toISOString(),
       context: error.context,
-    }));
+    });
+
+    // Firebase Crashlytics integration point:
+    // import { getAnalytics, logEvent } from 'firebase/analytics';
+    // logEvent(analytics, 'exception', { description: error.message, fatal: true });
   }
 
-  // Helper to wrap async operations with error handling
   async wrapAsync<T>(
     operation: () => Promise<T>,
     context?: Record<string, unknown>
@@ -66,7 +68,17 @@ export class ErrorService implements ErrorHandler {
     try {
       return await operation();
     } catch (error) {
-      this.handleError(error instanceof Error ? error : new Error(String(error)));
+      const err = error instanceof Error ? error : new Error(String(error));
+      if (context) {
+        const appError: AppError = {
+          message: err.message,
+          stack: err.stack,
+          context,
+          timestamp: new Date(),
+        };
+        this.logError(appError);
+      }
+      this.handleError(err);
       return null;
     }
   }
